@@ -1,0 +1,1 @@
+enum VerticalTextAlignment { left, right }

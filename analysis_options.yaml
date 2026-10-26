@@ -1,0 +1,29 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  errors:
+    deprecated_member_use: ignore
+    overridden_fields: ignore
+    unnecessary_import: ignore
+
+linter:
+  rules:
+    annotate_overrides: false
+    avoid_function_literals_in_foreach_calls: false
+    avoid_single_cascade_in_expression_statements: false
+    constant_identifier_names: false
+    curly_braces_in_flow_control_structures: false
+    library_private_types_in_public_api: false
+    prefer_collection_literals: false
+    prefer_conditional_assignment: false
+    prefer_const_constructors_in_immutables: false
+    prefer_final_fields: false
+    prefer_if_null_operators: false
+    prefer_is_empty: false
+    unnecessary_const: false
+    unnecessary_library_name: false
+    unnecessary_new: false
+    unnecessary_string_interpolations: false
+    unnecessary_this: false
+    use_key_in_widget_constructors: false
+    use_super_parameters: false
