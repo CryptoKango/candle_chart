@@ -74,6 +74,8 @@ KChartWidget(
 | `chartStyle` | `ChartStyle?` | — | 自定义样式 |
 | `enableTheme` | `bool` | `false` | 启用内置明暗主题 |
 | `controller` | `KChartController?` | — | 程序化控制 |
+| `onCandleTap` | `CandleSelectionCallback?` | — | 点击蜡烛回调，返回实体和索引 |
+| `onCandleLongPress` | `CandleSelectionCallback?` | — | 长按及滑动选中蜡烛回调，返回实体和索引 |
 | `fullscreenIcon` | `Widget?` | — | 全屏图标覆盖层 |
 | `candleCornerRadius` | `double` | `2.0` | 蜡烛实体圆角半径 (px) |
 
@@ -95,6 +97,19 @@ KChartWidget(
 | `flingRatio` | `double` | `0.9` | 惯性距离系数 |
 | `flingCurve` | `Curve` | `easeOutCubic` | 惯性动画曲线 |
 | `isOnDrag` | `Function(bool)?` | — | 拖拽状态回调 |
+
+```dart
+KChartWidget(
+  data,
+  isTrendLine: false,
+  onCandleTap: (entity, index) {
+    print('点击第 $index 根：${entity.close}');
+  },
+  onCandleLongPress: (entity, index) {
+    print('长按选中第 $index 根：${entity.close}');
+  },
+)
+```
 
 #### 翻译
 

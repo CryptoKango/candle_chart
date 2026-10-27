@@ -319,6 +319,62 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('candle tap and long-press movement emit selected data', (
+    tester,
+  ) async {
+    final data = List.generate(
+      80,
+      (index) => KLineEntity.fromCustom(
+        open: index.toDouble(),
+        high: index + 1.0,
+        low: index.toDouble(),
+        close: index + 0.5,
+        vol: 1,
+        time: 1704067200000 + index * 60000,
+      ),
+    );
+    final tappedIndexes = <int>[];
+    final longPressedIndexes = <int>[];
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Center(
+          child: SizedBox(
+            key: const Key('chart-host'),
+            width: 375,
+            height: 402,
+            child: KChartWidget(
+              data,
+              isTrendLine: false,
+              onCandleTap: (entity, index) => tappedIndexes.add(index),
+              onCandleLongPress: (entity, index) =>
+                  longPressedIndexes.add(index),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final rect = tester.getRect(find.byKey(const Key('chart-host')));
+    final start = Offset(rect.left + rect.width / 2, rect.top + 100);
+    await tester.tapAt(start);
+    await tester.pump();
+
+    final gesture = await tester.startGesture(start);
+    await tester.pump(const Duration(milliseconds: 600));
+    await gesture.moveBy(const Offset(-60, 0));
+    await tester.pump();
+    await gesture.up();
+    await tester.pump();
+
+    expect(tappedIndexes, hasLength(1));
+    expect(tappedIndexes.single, inInclusiveRange(0, data.length - 1));
+    expect(longPressedIndexes, isNotEmpty);
+    expect(longPressedIndexes.toSet().length, longPressedIndexes.length);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets(
     'chart accepts a realtime data revision without replacing its key',
     (tester) async {

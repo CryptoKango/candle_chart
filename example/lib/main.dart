@@ -261,7 +261,7 @@ List<KLineEntity> _createDemoData() {
       high: max(open, close) + 80 + random.nextDouble() * 420,
       low: min(open, close) - 80 - random.nextDouble() * 420,
       vol: 500 + random.nextDouble() * 3500,
-      time: now - (159 - index) * 3600,
+      time: now - (159 - index) * 3600 * 1000,
     );
     price = close;
     return entity;

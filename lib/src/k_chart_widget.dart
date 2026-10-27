@@ -23,6 +23,9 @@ enum CrosshairMode { longPress, tapAndLongPress }
 
 enum KChartScaleMode { pinch, pinchAndWheel }
 
+/// 蜡烛选中回调，返回选中的行情实体及其在 [KChartWidget.datas] 中的索引。
+typedef CandleSelectionCallback = void Function(KLineEntity entity, int index);
+
 class TimeFormat {
   static const List<String> YEAR_MONTH_DAY = [yyyy, '-', mm, '-', dd];
   static const List<String> YEAR_MONTH_DAY_WITH_HOUR = [
@@ -124,6 +127,12 @@ class KChartWidget extends StatefulWidget {
   final SecondaryState secondaryState;
   final List<SecondaryState>? secondaryStates;
   final Function()? onSecondaryTap;
+
+  /// 点击主图蜡烛时触发。
+  final CandleSelectionCallback? onCandleTap;
+
+  /// 长按主图以及长按滑动到另一根蜡烛时触发。
+  final CandleSelectionCallback? onCandleLongPress;
   final bool isLine;
   final bool isTapShowInfoDialog; //是否开启单击显示详情数据
   final bool hideGrid;
@@ -210,6 +219,8 @@ class KChartWidget extends StatefulWidget {
     this.secondaryState = SecondaryState.MACD,
     this.secondaryStates,
     this.onSecondaryTap,
+    this.onCandleTap,
+    this.onCandleLongPress,
     this.volHidden = false,
     this.isLine = false,
     this.isTapShowInfoDialog = false,
@@ -308,6 +319,7 @@ class _KChartWidgetState extends State<KChartWidget>
   Timer? _updateThrottleTimer;
   bool _needsUpdate = false;
   int _paintRevision = 0;
+  int? _lastLongPressCandleIndex;
   static const int _throttleDelay = 16; // 约60fps
 
   // 平移手势跟踪（统一 onScale 处理单指平移 + 双指缩放）
@@ -684,6 +696,12 @@ class _KChartWidgetState extends State<KChartWidget>
                 }
               }
 
+              _emitCandleSelection(
+                painter,
+                details.localPosition,
+                widget.onCandleTap,
+              );
+
               if (!widget.isTrendLine &&
                   widget.crosshairMode == CrosshairMode.tapAndLongPress &&
                   painter.isInMainRect(details.localPosition)) {
@@ -816,6 +834,13 @@ class _KChartWidgetState extends State<KChartWidget>
             onLongPressStart: (details) {
               isOnTap = false;
               isLongPress = true;
+              _lastLongPressCandleIndex = null;
+              _emitCandleSelection(
+                painter,
+                details.localPosition,
+                widget.onCandleLongPress,
+                deduplicateLongPress: true,
+              );
               if ((mSelectX != details.localPosition.dx ||
                       mSelectY != details.globalPosition.dy) &&
                   !widget.isTrendLine) {
@@ -836,6 +861,12 @@ class _KChartWidgetState extends State<KChartWidget>
               }
             },
             onLongPressMoveUpdate: (details) {
+              _emitCandleSelection(
+                painter,
+                details.localPosition,
+                widget.onCandleLongPress,
+                deduplicateLongPress: true,
+              );
               if ((mSelectX != details.localPosition.dx ||
                       mSelectY != details.globalPosition.dy) &&
                   !widget.isTrendLine) {
@@ -855,6 +886,7 @@ class _KChartWidgetState extends State<KChartWidget>
             },
             onLongPressEnd: (details) {
               isLongPress = false;
+              _lastLongPressCandleIndex = null;
               enableCordRecord = true;
               mInfoWindowStream?.sink.add(null);
               notifyChanged();
@@ -896,6 +928,28 @@ class _KChartWidgetState extends State<KChartWidget>
     if ((_maxScrollX - mScrollX).abs() <= 1) {
       widget.onLoadMore!(false);
     }
+  }
+
+  void _emitCandleSelection(
+    ChartPainter painter,
+    Offset localPosition,
+    CandleSelectionCallback? callback, {
+    bool deduplicateLongPress = false,
+  }) {
+    final data = widget.datas;
+    if (callback == null ||
+        widget.isTrendLine ||
+        data == null ||
+        data.isEmpty ||
+        !painter.isInMainRect(localPosition)) {
+      return;
+    }
+
+    final index = painter.calculateSelectedX(localPosition.dx);
+    if (index < 0 || index >= data.length) return;
+    if (deduplicateLongPress && _lastLongPressCandleIndex == index) return;
+    if (deduplicateLongPress) _lastLongPressCandleIndex = index;
+    callback(data[index], index);
   }
 
   void _syncCountdownTimer() {
